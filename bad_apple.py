@@ -1,89 +1,148 @@
 # write python code that plays bad apple video from youtube in the terminal using ascii characters
 # write python code that plays bad apple video from youtube in the terminal using ascii characters, use yt_dlp and ffmpeg-python
 
-"""
-FFMPEG
-https://youtu.be/ucXTQ0V8qMA
-"""
-""" 
+# import ffmpeg
 import os
-import time
-# import youtube_dl
-import yt_dlp as youtube_dl
-import ffmpeg
+import shutil
+import subprocess
+import sys
+import yt_dlp
+
 from PIL import Image
+from time import sleep
 
-# Download the video from YouTube
-ydl_opts = {
-    'outtmpl': 'bad_apple.mp4',  # Save the video as bad_apple.mp4
-}
-with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    ydl.download(['https://www.youtube.com/watch?v=FtutLA63Cp8'])  # Download the video
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+ASCII_CHARS = [*"@#S%?*+;:,."]
+ASCII_CHARS.reverse()
+SCALE_SIZE = 70
 
-# Convert the video to a series of images
-(
-    ffmpeg
-    .input('bad_apple.mp4')
-    .filter('fps', fps=24)
-    .output('pipe:', format='image2', vframes=1)
-    .run()
-    # .run(capture_stdout=True)
-    # .run(pipe_stdout=True)
-)
+def reduce_framerate_mp4(input, output):
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-i", input,
+        "-filter:v", "fps=15",
+        output
+    ]
 
-# Define a function to convert an image to ASCII characters
+    try:
+        subprocess.run(ffmpeg_cmd, check=True)
+        print("Framerate conversion successful!")
+    except subprocess.CalledProcessError as e:
+        print("Framerate conversion failed!")
+
+def extract_frames_from_mp4(input):
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-i", input,
+        "frames/frame%05d.png"
+    ]
+
+    try:
+        subprocess.run(ffmpeg_cmd, check=True)
+        print("Frame extraction successful!")
+    except subprocess.CalledProcessError as e:
+        print("Frame extraction failed!")
+
+# https://youtu.be/v_raWlX7tZY
+def resize_image(image, new_width=SCALE_SIZE):
+    width, height = image.size
+    ratio = height/width
+    new_height = int(new_width * ratio)
+    resized_image = image.resize((new_width, new_height))
+    return (resized_image)
+
+
+def grayify(image):
+    return image.convert("L")
+
+
 def pixels_to_ascii(image):
-    ascii_chars = "@%#*+=-:. "
-    ascii_img = ""
-    for i in range(0, image.width, 2):
-        for j in range(image.height):
-            r, g, b = image.getpixel((i, j))
-            grayscale = int(0.299 * r + 0.587 * g + 0.114 * b)
-            ascii_img += ascii_chars[grayscale // 32]
-        ascii_img += "\n"
-    return ascii_img
+    pixels = image.getdata()
+    # multiply each "pixel" by 2 to widen the image in the terminal
+    return "".join([ASCII_CHARS[pixel // 25] * 2 for pixel in pixels])
 
-# Define a function to display the ASCII characters in the terminal
-def play_video(ascii_frames):
-    for ascii_frame in ascii_frames:
-        print(ascii_frame)
-        time.sleep(0.04)  # Sleep for 1/24th of a second (4 frames per second)
 
-# Convert the video to ASCII frames
-images = (
-    ffmpeg
-    .input('bad_apple.mp4')
-    .filter('fps', fps=24)
-    .output('%04d.jpg', start_number=0, vframes=1)
-    .run()
-)
-ascii_frames = [pixels_to_ascii(Image.open(f'{i}.jpg')) for i in range(1, 1751)]  # There are 1750 frames in the video
+def resize_images_in_frames():
+    FRAMES_FOLDER = os.listdir(f"{THIS_FOLDER}/frames")
+    for item in FRAMES_FOLDER:
+        if os.path.isfile(f"{THIS_FOLDER}/frames/{item}"):
+            im = Image.open(f"{THIS_FOLDER}/frames/{item}")
+            f, _ = os.path.splitext(f"{THIS_FOLDER}/frames/{item}")
+            im_resize = im.resize((240, 180))
+            im_resize.save(f + "_resized.png", "PNG", quality=90)
+            os.remove(f"{THIS_FOLDER}/frames/{item}")
+            print(f"({item}) image resize successful.")
 
-# Display the ASCII frames in the terminal
-play_video(ascii_frames)
 
-# Clean up
-os.remove('bad_apple.mp4')
-for i in range(1, 1751):
-    os.remove(f'{i}.jpg') """
+def render_frames(new_width):
+    FRAMES_FOLDER = os.listdir(f"{THIS_FOLDER}/frames")
+    # print(FRAMES_FOLDER[1159])
+    # print(f"{FRAMES_FOLDER}\n{os.path.exists(FRAMES_FOLDER)}")
 
-import os
-# import youtube_dl
-import yt_dlp as youtube_dl
-from ffmpeg import FFmpeg
+    for item in FRAMES_FOLDER:
+        try:
+            image = Image.open(f"frames/{item}") # RANDOM FRAME
+        except:
+            print("not a valid image")
+        
+        new_image_data = pixels_to_ascii(grayify(resize_image(image)))
+        
+        pixel_count = len(new_image_data)  
+        ascii_image = "\n".join([new_image_data[index:(index + new_width)] for index in range(0, pixel_count, new_width)])
 
-# Download video using yt_dlp
-ydl_opts = {
-    'outtmpl': 'video.mp4',  # Save video as video.mp4
-}
-with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    ydl.download(['https://www.youtube.com/watch?v=yzC6N3PaoWo'])  # Bad Apple video
+        os.system("cls" if os.name == "nt" else "clear")
+        print(ascii_image)
+        sleep(0.025)
 
-# Convert video to audio using ffmpeg-python
-ffmpeg = FFmpeg(executable='ffmpeg')  # Ensure ffmpeg is installed and accessible in the system PATH
-stream = ffmpeg.input('video.mp4')
-stream = ffmpeg.output(stream, 'output.mp3')
-ffmpeg.run()
+videos = "videos"
+if not os.path.exists(videos):
+    print("don't render in terminal yet")
+    os.makedirs(videos)
 
-# Play audio in the terminal
-os.system('mpg123 output.mp3')  # Ensure mpg123 is installed and accessible in the system PATH
+frames = "frames"
+if not os.path.exists(frames):
+    os.makedirs(frames)
+    try:
+        os.remove("videos/bad_apple_temp.mp4")
+    except:
+        print("videos/bad_apple_temp.mp4 doesnt exist")
+
+    try:
+        os.remove("videos/bad_apple.mp4")
+    except:
+        print("videos/bad_apple.mp4 doesnt exist")
+    # UNTIL HERE
+
+    ydl_opts = {
+        "format": "worst",
+        # "listformats": True,
+        "ignoreerrors": True,
+        "outtmpl": "videos/bad_apple_temp.mp4"
+    }
+
+    # https://youtu.be/watch?v=WJq4jWSQNd8 - Go ! Bwaaah ! (short video for debugging)
+    # https://youtu.be/watch?v=FtutLA63Cp8 - 【東方】Bad Apple!! ＰＶ【影絵】(not the official upload, but has more views than the official one)
+    # https://youtu.be/watch?v=i41KoE0iMYU - [Alstroemeria Records]Bad Apple!! feat.nomico(Shadow Animation Version)[ACVS.008_Tr.00] (official upload)
+
+    with yt_dlp.YoutubeDL(ydl_opts) as y:
+        y.download(["https://youtu.be/watch?v=FtutLA63Cp8"])
+
+    reduce_framerate_mp4("videos/bad_apple_temp.mp4", "videos/bad_apple.mp4")
+    extract_frames_from_mp4("videos/bad_apple.mp4")
+    resize_images_in_frames()
+    print("then render it")
+    render_frames(SCALE_SIZE*2)
+
+    try:
+        shutil.rmtree("videos")
+    except:
+        print("videos not deleted")
+
+else:
+    print("render in terminal")
+    render_frames(SCALE_SIZE*2)
+
+""" try:
+    shutil.rmtree("frames")
+except:
+    print("frames not deleted") """

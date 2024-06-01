@@ -165,4 +165,8 @@ cython_debug/
 # my own shit
 *.mp4
 *.webm
-yt_dlp_test1.py
+links.txt
+frames
+videos
+old
+images
