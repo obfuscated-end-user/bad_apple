@@ -11,7 +11,7 @@ THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 # ASCII_CHARS = [*" .:;+*?%S#@"]
 ASCII_CHARS = [*" .:-=+*?#%@"]
 SCALE_SIZE = 90
-FPS = 16.5
+FPS = 16
 
 def extract_frames_from_mp4(input_mp4):
     ffmpeg_cmd = [
@@ -25,7 +25,6 @@ def extract_frames_from_mp4(input_mp4):
         print("Frame extraction successful!")
     except subprocess.CalledProcessError as e:
         print("Frame extraction failed!")
-    os.system("cls" if os.name == "nt" else "clear")
 
 
 def reduce_framerate_mp4(input_mp4, output_mp4):
@@ -78,9 +77,8 @@ def pixels_to_ascii(image):
     return "".join([ASCII_CHARS[pixel // 25] * 2 for pixel in pixels])
 
 
-def resize_images_in_frames():
+def resize_frames():
     FRAMES_FOLDER = os.listdir(f"{THIS_FOLDER}/cache/frames")
-    # print("")
     for item in FRAMES_FOLDER:
         if os.path.isfile(f"{THIS_FOLDER}/cache/frames/{item}"):
             im = Image.open(f"{THIS_FOLDER}/cache/frames/{item}")
@@ -108,9 +106,9 @@ def render_frames(new_width):
 
     play_music_file("cache/audio/track.mp3")
 
-    for item in FRAMES_FOLDER:
+    for frame in FRAMES_FOLDER:
         try:
-            image = Image.open(f"cache/frames/{item}")
+            image = Image.open(f"cache/frames/{frame}")
         except:
             print("not a valid image")
         
@@ -121,7 +119,7 @@ def render_frames(new_width):
 
         print(chr(27) + "[2J")
         print(ascii_image)
-        time.sleep(1 / FPS) # remove the delay for debugging
+        time.sleep(1 / FPS) # comment out this line the delay for debugging
     os.system("cls" if os.name == "nt" else "clear")
     print("\n" * 50 + "終")
 
@@ -163,7 +161,7 @@ if not os.path.exists(frames):
         "9lNZ_Rnr7Jc", # Bad Apple!! - Full Version w/video [Lyrics in Romaji, Translation in English]
         "v-fc1zv31zE", # wtf?
         "Uds7g3M-4lQ", # BAND-MAID / Thrill (スリル) (Official Music Video) (AUDIO SYNC ISSUES)
-        "WJq4jWSQNd8", # - Go ! Bwaaah ! (short video for debugging)
+        "WJq4jWSQNd8", # Go ! Bwaaah ! (short video for debugging)
     ]
 
     with yt_dlp.YoutubeDL(ydl_opts) as y:
@@ -172,7 +170,7 @@ if not os.path.exists(frames):
     reduce_framerate_mp4("cache/videos/bad_apple_temp.mp4", "cache/videos/bad_apple.mp4")
     extract_audio_from_mp4("cache/videos/bad_apple_temp.mp4", "cache/audio/track.mp3")
     extract_frames_from_mp4("cache/videos/bad_apple.mp4")
-    resize_images_in_frames()
+    resize_frames()
     render_frames(SCALE_SIZE * 2)
 
     try:
