@@ -166,7 +166,6 @@ cython_debug/
 *.mp4
 *.webm
 links.txt
-frames
-videos
+cache
 old
 images

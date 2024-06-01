@@ -11,7 +11,7 @@ THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 # ASCII_CHARS = [*" .:;+*?%S#@"]
 ASCII_CHARS = [*" .:-=+*?#%@"]
 SCALE_SIZE = 90
-FPS = 15.5
+FPS = 16.5
 
 def extract_frames_from_mp4(input_mp4):
     ffmpeg_cmd = [
