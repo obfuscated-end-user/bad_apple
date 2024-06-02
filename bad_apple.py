@@ -253,7 +253,7 @@ def render_frames(new_width):
     hwnd = user32.GetForegroundWindow()
     user32.ShowWindow(hwnd, SW_MAXIMISE)
 
-    print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nBy Alstroemeria Records feat. nomico\n")
+    print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nOrignally composed by ZUN\nCover by Alstroemeria Records feat. nomico\n")
     time.sleep(2)
     print(f"Programmed by {bcolors.WARNING}横浜{bcolors.ENDC}\n")
     time.sleep(2)
@@ -262,7 +262,7 @@ def render_frames(new_width):
     print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}")
     time.sleep(3)
 
-    play_music_file("cache/audio/track.mp3")
+    # play_music_file("cache/audio/track.mp3")
 
     start = datetime.datetime.now()
     for frame in FRAMES_FOLDER:
