@@ -1,12 +1,14 @@
 import ctypes
 import datetime
-import pygame
 import os
+import random
 import shutil
 import subprocess
 import time
 import yt_dlp
+
 from PIL import Image
+from pygame import mixer
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
@@ -20,7 +22,6 @@ ASCII_CHARSETS = [
     [*"          @"],
     [*"         # "],
     [*"       %S# "],
-    # [*""],
 ]
 
 CHARSET = ASCII_CHARSETS[0]
@@ -30,6 +31,7 @@ SCALE_SIZE = 82
 RATE_CONST = 45.5 # adjust this if it syncs like ass
 FPS = 1 / RATE_CONST
 # FPS = float(input("enter fps: "))
+
 
 class bcolors:
     HEADER = "\033[95m"
@@ -41,6 +43,7 @@ class bcolors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
+
 
 def extract_frames_from_mp4(input_mp4):
     ffmpeg_cmd = [
@@ -120,9 +123,10 @@ def resize_frames():
 
 
 def play_music_file(mp3_file):
-    pygame.mixer.init()
-    pygame.mixer.music.load(mp3_file)
-    pygame.mixer.music.play()
+    mixer.init()
+    mixer.music.load(mp3_file)
+    mixer.music.play()
+
 
 # https://vocaloidlyrics.fandom.com/wiki/Bad_Apple!!
 # yes, i'm aware that this is from another bad apple cover, just happened to also cover the shadow art version shit as well
@@ -184,14 +188,16 @@ timestamp_list = []
 for key in bad_apple_lyrics:
     timestamp_list.append(key)
 
-global counter_lyrics
-counter_lyrics = 0
 
-
+# https://stackoverflow.com/questions/45265044/how-to-check-a-time-is-between-two-times-in-python
 def is_between_time(time, time_range):
     if time_range[1] < time_range[0]:
         return time >= time_range[0] or time <= time_range[1]
     return time_range[0] <= time <= time_range[1]
+
+
+global counter_lyrics
+counter_lyrics = 0
 
 
 def swtich_lyrics(timestamp):
@@ -241,10 +247,11 @@ def render_frames(new_width):
     )
 
     # force maximize terminal window
+    # https://stackoverflow.com/questions/2790825/how-can-i-maximize-a-specific-window-with-python
     user32 = ctypes.WinDLL("user32")
     SW_MAXIMISE = 3
-    hWnd = user32.GetForegroundWindow()
-    user32.ShowWindow(hWnd, SW_MAXIMISE)
+    hwnd = user32.GetForegroundWindow()
+    user32.ShowWindow(hwnd, SW_MAXIMISE)
 
     print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nBy Alstroemeria Records feat. nomico\n")
     time.sleep(2)
@@ -270,8 +277,18 @@ def render_frames(new_width):
         ascii_image = "\n".join([new_image_data[index:(index + new_width)] for index in range(0, pixel_count, new_width)])
 
         # print(chr(27) + "[2J")
+        colors = [
+            bcolors.HEADER,
+            bcolors.OKBLUE,
+            bcolors.OKCYAN,
+            bcolors.OKGREEN,
+            bcolors.WARNING,
+            bcolors.FAIL
+        ]
+        
         os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
         print(ascii_image)
+        # print(f"{random.choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
 
         lyrics_time = datetime.datetime.now()
         lyrics_time_str = str(lyrics_time - start)[2:10]
