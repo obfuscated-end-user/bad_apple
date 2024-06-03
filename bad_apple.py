@@ -1,18 +1,19 @@
-import ctypes
-import datetime
 import os
-import random
-import shutil
-import subprocess
-import time
-import yt_dlp
+import ctypes
 
-from PIL import Image
+from datetime import datetime
+from PIL.Image import open
 from pygame import mixer
+from random import choice
+from subprocess import run, CalledProcessError
+from shutil import rmtree
+from time import sleep, time
+from yt_dlp import YoutubeDL
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
 # each charset should have 11 chars
+# anything fullwidth (cjk characters, hiragana, katakana, etc) will render like ass
 ASCII_CHARSETS = [
     [*" .:;+*?%S#X"],
     [*"X#S%?+*;:. "], # reverse
@@ -22,40 +23,42 @@ ASCII_CHARSETS = [
     [*"          @"],
     [*"         # "],
     [*"       %S# "],
+    [*"          ｱ"],
+    [*" ﾉﾆﾐﾁﾂｦﾛﾀﾈﾎ"],
+    [*" 0123456789"],
+    [*"dQw4w9WgXcQ"],
 ]
 
-CHARSET = ASCII_CHARSETS[0]
+CHARSET = ASCII_CHARSETS[3]
 
 SCALE_SIZE = 82
-# RATE_CONST = 42
-RATE_CONST = 45.5 # adjust this if it syncs like ass
+RATE_CONST = 38.4 # adjust this if it syncs like ass, 38.50000001
 FPS = 1 / RATE_CONST
-# FPS = float(input("enter fps: "))
 
 
 class bcolors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
+    HEADER      = "\033[95m"
+    OKBLUE      = "\033[94m"
+    OKCYAN      = "\033[96m"
+    OKGREEN     = "\033[92m"
+    WARNING     = "\033[93m"
+    FAIL        = "\033[91m"
+    ENDC        = "\033[0m"
+    BOLD        = "\033[1m"
+    UNDERLINE   = "\033[4m"
 
 
 def extract_frames_from_mp4(input_mp4):
     ffmpeg_cmd = [
         "ffmpeg",
         "-i", input_mp4,
-        "cache/frames/frame%04d.png"
+        "cache/frames/frame%04d.png" # frame_0001.png, frame_0002.png, ...
     ]
 
     try:
-        subprocess.run(ffmpeg_cmd, check=True)
+        run(ffmpeg_cmd, check=True)
         print("Frame extraction successful!")
-    except subprocess.CalledProcessError as e:
+    except CalledProcessError:
         print("Frame extraction failed!")
 
 
@@ -69,9 +72,9 @@ def reduce_framerate_mp4(input_mp4, output_mp4):
     ]
 
     try:
-        subprocess.run(ffmpeg_cmd, check=True)
+        run(ffmpeg_cmd, check=True)
         print("Framerate conversion successful!")
-    except subprocess.CalledProcessError as e:
+    except CalledProcessError:
         print("Framerate conversion failed!")
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -84,9 +87,9 @@ def extract_audio_from_mp4(input_mp4, output_mp3):
     ]
 
     try:
-        subprocess.run(ffmpeg_cmd, check=True)
+        run(ffmpeg_cmd, check=True)
         print("Audio extraction successful!")
-    except subprocess.CalledProcessError as e:
+    except CalledProcessError:
         print("Audio extraction failed!")
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -114,7 +117,7 @@ def resize_frames():
     FRAMES_FOLDER = os.listdir(f"{THIS_FOLDER}/cache/frames")
     for item in FRAMES_FOLDER:
         if os.path.isfile(f"{THIS_FOLDER}/cache/frames/{item}"):
-            im = Image.open(f"{THIS_FOLDER}/cache/frames/{item}")
+            im = open(f"{THIS_FOLDER}/cache/frames/{item}")
             f, _ = os.path.splitext(f"{THIS_FOLDER}/cache/frames/{item}")
             im_resize = im.resize((300, 168))
             im_resize.save(f + "_resized.png", "PNG", quality=90)
@@ -131,7 +134,7 @@ def play_music_file(mp3_file):
 # https://vocaloidlyrics.fandom.com/wiki/Bad_Apple!!
 # yes, i'm aware that this is from another bad apple cover, just happened to also cover the shadow art version shit as well
 bad_apple_lyrics = {
-    ("00:01.00", "00:29.07"): " ",
+    ("00:01.00", "00:29.07"): "",
     ("00:29.08", "00:32.55"): "流れてく　時の中ででも",
     ("00:32.56", "00:36.08"): "気だるさが　ほらグルグル廻って",
     ("00:36.09", "00:39.47"): "私から　離れる心も",
@@ -156,7 +159,7 @@ bad_apple_lyrics = {
     ("01:41.62", "01:45.13"): "人のことなど　知りもしないわ",
     ("01:45.14", "01:48.65"): "こんな私も　変われるもなら",
     ("01:48.66", "01:52.56"): "もし変われるのなら　白になる",
-    ("01:52.57", "02:06.44"): " ",
+    ("01:52.57", "02:06.44"): "",
     ("02:06.45", "02:09.91"): "流れてく　時の中ででも",
     ("02:09.92", "02:13.45"): "気だるさが　ほらグルグル廻って",
     ("02:13.46", "02:16.97"): "私から　離れる心も",
@@ -181,12 +184,10 @@ bad_apple_lyrics = {
     ("03:19.12", "03:22.54"): "全ての事も　まだ知らないの",
     ("03:22.55", "03:26.07"): "重い目蓋を　開けたのならば",
     ("03:26.08", "03:30.07"): "すべて壊すのなら　黒になれ",
-    ("03:30.08", "03:31.08"): " ",
+    ("03:30.08", "03:31.08"): "",
 }
 
-timestamp_list = []
-for key in bad_apple_lyrics:
-    timestamp_list.append(key)
+timestamp_list = [key for key in bad_apple_lyrics]
 
 
 # https://stackoverflow.com/questions/45265044/how-to-check-a-time-is-between-two-times-in-python
@@ -210,6 +211,16 @@ def swtich_lyrics(timestamp):
         counter_lyrics = counter_lyrics + 1
     else:
         print(f"\n{bcolors.BOLD}{bcolors.FAIL}{bad_apple_lyrics[timestamp_list[counter_lyrics - 1]]}{bcolors.ENDC}\n")
+
+
+colors = [
+    bcolors.HEADER,
+    bcolors.OKBLUE,
+    bcolors.OKCYAN,
+    bcolors.OKGREEN,
+    bcolors.WARNING,
+    bcolors.FAIL
+]
 
 
 def render_frames(new_width):
@@ -253,55 +264,55 @@ def render_frames(new_width):
     hwnd = user32.GetForegroundWindow()
     user32.ShowWindow(hwnd, SW_MAXIMISE)
 
-    print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nOrignally composed by ZUN\nCover by Alstroemeria Records feat. nomico\n")
-    time.sleep(2)
+    print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nComposed by ZUN\nCover by Alstroemeria Records feat. nomico\n")
+    sleep(2)
     print(f"Programmed by {bcolors.WARNING}横浜{bcolors.ENDC}\n")
-    time.sleep(2)
+    sleep(2)
     print(f"{bcolors.WARNING}Seizure warning: flashing lights!{bcolors.ENDC}\nYou may want to close other programs to reduce lag.\n\n")
-    time.sleep(2)
+    sleep(2)
     print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}")
-    time.sleep(3)
+    sleep(3)
 
-    # play_music_file("cache/audio/track.mp3")
+    play_music_file("cache/audio/track.mp3")
 
-    start = datetime.datetime.now()
+    start = datetime.now()
+    
     for frame in FRAMES_FOLDER:
         try:
-            image = Image.open(f"cache/frames/{frame}")
+            image = open(f"cache/frames/{frame}")
         except:
             print("not a valid image")
+        
         
         new_image_data = pixels_to_ascii(grayscale(resize_image(image)))
         
         pixel_count = len(new_image_data)  
         ascii_image = "\n".join([new_image_data[index:(index + new_width)] for index in range(0, pixel_count, new_width)])
 
+        # start_render_frame = time()
         # print(chr(27) + "[2J")
-        colors = [
-            bcolors.HEADER,
-            bcolors.OKBLUE,
-            bcolors.OKCYAN,
-            bcolors.OKGREEN,
-            bcolors.WARNING,
-            bcolors.FAIL
-        ]
-        
         os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
         print(ascii_image)
-        # print(f"{random.choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
+        # print(f"{choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
+        
+        # end_render_frame = time()
+        # render_frame_delay = end_render_frame - start_render_frame
 
-        lyrics_time = datetime.datetime.now()
+        lyrics_time = datetime.now()
         lyrics_time_str = str(lyrics_time - start)[2:10]
         swtich_lyrics(lyrics_time_str)
         print(lyrics_time_str)
+        
+        sleep(FPS) # comment out this line for debugging
+        # sleep(FPS + render_frame_delay) # comment out this line for debugging
+        # sleep(1 / (RATE_CONST - render_frame_delay)) # comment out this line for debugging
 
-        time.sleep(FPS) # comment out this line for debugging
-
-    end = datetime.datetime.now()
+    end = datetime.now()
     duration = str(end - start)[2:10]
     
     os.system("cls" if os.name == "nt" else "clear")
-    print("\n" * 50 + "終")
+    sleep(3)
+    print("\n" * 25 + f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}" + "\n" * 10 + "終")
     print(f"time taken to render frames: {duration}") # should be close to 3:44
 
 
@@ -346,7 +357,7 @@ if not os.path.exists(frames):
         "dQw4w9WgXcQ", # ギターと孤独と蒼い惑星
     ]
 
-    with yt_dlp.YoutubeDL(ydl_opts) as y:
+    with YoutubeDL(ydl_opts) as y:
         y.download([f"https://youtu.be/watch?v={ids[0]}"])
 
     reduce_framerate_mp4("cache/videos/bad_apple_temp.mp4", "cache/videos/bad_apple.mp4")
@@ -356,7 +367,7 @@ if not os.path.exists(frames):
     render_frames(SCALE_SIZE * 2)
 
     try:
-        shutil.rmtree("cache/videos")
+        rmtree("cache/videos")
     except:
         print("cache/videos not deleted")
 
