@@ -7,13 +7,14 @@ from pygame import mixer
 from random import choice
 from subprocess import run, CalledProcessError
 from shutil import rmtree
-from time import sleep, time
+from time import sleep
 from yt_dlp import YoutubeDL
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
 # each charset should have 11 chars
 # anything fullwidth (cjk characters, hiragana, katakana, etc) will render like ass
+# i know that not all of these are ASCII characters
 ASCII_CHARSETS = [
     [*" .:;+*?%S#X"],
     [*"X#S%?+*;:. "], # reverse
@@ -27,15 +28,19 @@ ASCII_CHARSETS = [
     [*" ﾉﾆﾐﾁﾂｦﾛﾀﾈﾎ"],
     [*" 0123456789"],
     [*"dQw4w9WgXcQ"],
+    [*" ▁▂▃▄▅▆▚▙▇█"],
+    [*" ░░░▒▒▒▓▓▓█"],
+    [*" ⠠⡐⠥⡕⡞⡟⡷⡾⡿⣿"],
 ]
 
 CHARSET = ASCII_CHARSETS[3]
 
-SCALE_SIZE = 82
+SCALE_SIZE = 83
 RATE_CONST = 38.4 # adjust this if it syncs like ass, 38.50000001
 FPS = 1 / RATE_CONST
 
 
+# https://stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
 class bcolors:
     HEADER      = "\033[95m"
     OKBLUE      = "\033[94m"
@@ -46,20 +51,6 @@ class bcolors:
     ENDC        = "\033[0m"
     BOLD        = "\033[1m"
     UNDERLINE   = "\033[4m"
-
-
-def extract_frames_from_mp4(input_mp4):
-    ffmpeg_cmd = [
-        "ffmpeg",
-        "-i", input_mp4,
-        "cache/frames/frame%04d.png" # frame_0001.png, frame_0002.png, ...
-    ]
-
-    try:
-        run(ffmpeg_cmd, check=True)
-        print("Frame extraction successful!")
-    except CalledProcessError:
-        print("Frame extraction failed!")
 
 
 def reduce_framerate_mp4(input_mp4, output_mp4):
@@ -94,23 +85,18 @@ def extract_audio_from_mp4(input_mp4, output_mp3):
     os.system("cls" if os.name == "nt" else "clear")
 
 
-# https://youtu.be/v_raWlX7tZY
-def resize_image(image, new_width=SCALE_SIZE):
-    width, height = image.size
-    ratio = height / width
-    new_height = int(new_width * ratio)
-    resized_image = image.resize((new_width, new_height))
-    return (resized_image)
+def extract_frames_from_mp4(input_mp4):
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-i", input_mp4,
+        "cache/frames/frame%04d.png" # frame_0001.png, frame_0002.png, ...
+    ]
 
-
-def grayscale(image):
-    return image.convert("L")
-
-
-def pixels_to_ascii(image):
-    pixels = image.getdata()
-    # multiply each "pixel" by 2 to widen the image in the terminal
-    return "".join([CHARSET[pixel // 25] * 2 for pixel in pixels])
+    try:
+        run(ffmpeg_cmd, check=True)
+        print("Frame extraction successful!")
+    except CalledProcessError:
+        print("Frame extraction failed!")
 
 
 def resize_frames():
@@ -125,10 +111,30 @@ def resize_frames():
             print(f"\033[1A\033[KResizing images... ({FRAMES_FOLDER.index(item)}/{len(FRAMES_FOLDER)})")
 
 
+# https://youtu.be/v_raWlX7tZY
+def resize_image(image, new_width=SCALE_SIZE):
+    width, height = image.size
+    ratio = height / width
+    new_height = int(new_width * ratio)
+    resized_image = image.resize((new_width, new_height))
+    return resized_image
+
+
+def grayscale(image):
+    return image.convert("L")
+
+
+def pixels_to_ascii(image):
+    pixels = image.getdata()
+    # multiply each "pixel" by 2 to widen the image in the terminal
+    return "".join([CHARSET[pixel // 25] * 2 for pixel in pixels])
+
+
 def play_music_file(mp3_file):
     mixer.init()
     mixer.music.load(mp3_file)
     mixer.music.play()
+
 
 
 # https://vocaloidlyrics.fandom.com/wiki/Bad_Apple!!
@@ -185,6 +191,7 @@ bad_apple_lyrics = {
     ("03:22.55", "03:26.07"): "重い目蓋を　開けたのならば",
     ("03:26.08", "03:30.07"): "すべて壊すのなら　黒になれ",
     ("03:30.08", "03:31.08"): "",
+    ("03:32.08", "03:33.08"): "",
 }
 
 timestamp_list = [key for key in bad_apple_lyrics]
@@ -201,16 +208,16 @@ global counter_lyrics
 counter_lyrics = 0
 
 
-def swtich_lyrics(timestamp):
+def render_lyrics(timestamp):
     global counter_lyrics
     if counter_lyrics == len(timestamp_list):
         counter_lyrics = len(timestamp_list) - 1
 
     if is_between_time(timestamp, timestamp_list[counter_lyrics]):
-        print(f"\n{bcolors.FAIL}{bcolors.BOLD}{bad_apple_lyrics[timestamp_list[counter_lyrics - 1]]}{bcolors.ENDC}\n")
+        print(f"\n{bcolors.FAIL}{bcolors.BOLD}{bad_apple_lyrics[timestamp_list[counter_lyrics - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
         counter_lyrics = counter_lyrics + 1
     else:
-        print(f"\n{bcolors.BOLD}{bcolors.FAIL}{bad_apple_lyrics[timestamp_list[counter_lyrics - 1]]}{bcolors.ENDC}\n")
+        print(f"\n{bcolors.BOLD}{bcolors.FAIL}{bad_apple_lyrics[timestamp_list[counter_lyrics - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
 
 
 colors = [
@@ -281,7 +288,7 @@ def render_frames(new_width):
         try:
             image = open(f"cache/frames/{frame}")
         except:
-            print("not a valid image")
+            print("invalid file")
         
         
         new_image_data = pixels_to_ascii(grayscale(resize_image(image)))
@@ -289,23 +296,17 @@ def render_frames(new_width):
         pixel_count = len(new_image_data)  
         ascii_image = "\n".join([new_image_data[index:(index + new_width)] for index in range(0, pixel_count, new_width)])
 
-        # start_render_frame = time()
         # print(chr(27) + "[2J")
         os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
         print(ascii_image)
         # print(f"{choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
-        
-        # end_render_frame = time()
-        # render_frame_delay = end_render_frame - start_render_frame
 
         lyrics_time = datetime.now()
         lyrics_time_str = str(lyrics_time - start)[2:10]
-        swtich_lyrics(lyrics_time_str)
+        render_lyrics(lyrics_time_str)
         print(lyrics_time_str)
         
         sleep(FPS) # comment out this line for debugging
-        # sleep(FPS + render_frame_delay) # comment out this line for debugging
-        # sleep(1 / (RATE_CONST - render_frame_delay)) # comment out this line for debugging
 
     end = datetime.now()
     duration = str(end - start)[2:10]
