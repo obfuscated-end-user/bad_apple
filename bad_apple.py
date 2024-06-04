@@ -7,17 +7,17 @@ from pygame import mixer
 from random import choice
 from subprocess import run, CalledProcessError
 from shutil import rmtree
-from time import sleep
+from time import sleep #, time
 from yt_dlp import YoutubeDL
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
 # each charset should have 11 chars
-# anything fullwidth (cjk characters, hiragana, katakana, etc) will render like ass
+# anything fullwidth (CJK characters, hiragana, katakana, etc) will render like ass
 # i know that not all of these are ASCII characters
 ASCII_CHARSETS = [
     [*" .:;+*?%S#X"],
-    [*"X#S%?+*;:. "], # reverse
+    # [*"X#S%?+*;:. "], # reverse
     [*" .:-=+*?#%@"],
     [*" .:;+*?%S#@"],
     [*" .:;+*?%S# "], # outlines only
@@ -27,17 +27,25 @@ ASCII_CHARSETS = [
     [*"          ｱ"],
     [*" ﾉﾆﾐﾁﾂｦﾛﾀﾈﾎ"],
     [*" 0123456789"],
-    [*"dQw4w9WgXcQ"],
+    # [*"dQw4w9WgXcQ"],
     [*" ▁▂▃▄▅▆▚▙▇█"],
     [*" ░░░▒▒▒▓▓▓█"],
     [*" ⠠⡐⠥⡕⡞⡟⡷⡾⡿⣿"],
 ]
 
-CHARSET = ASCII_CHARSETS[3]
-
 SCALE_SIZE = 83
 RATE_CONST = 38.4 # adjust this if it syncs like ass, 38.50000001
 FPS = 1 / RATE_CONST
+
+# EXPERIMENTAL
+FLASH_COLORS = False
+RANDOM_CHARSET = False
+RANDOM_CHARSET_PER_FRAME = False
+
+if RANDOM_CHARSET:
+    CHARSET = choice(ASCII_CHARSETS)
+else:
+    CHARSET = ASCII_CHARSETS[2]
 
 
 # https://stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
@@ -99,6 +107,7 @@ def extract_frames_from_mp4(input_mp4):
         print("Frame extraction failed!")
 
 
+# https://stackoverflow.com/questions/21517879/python-pil-resize-all-images-in-a-folder
 def resize_frames():
     FRAMES_FOLDER = os.listdir(f"{THIS_FOLDER}/cache/frames")
     for item in FRAMES_FOLDER:
@@ -127,7 +136,10 @@ def grayscale(image):
 def pixels_to_ascii(image):
     pixels = image.getdata()
     # multiply each "pixel" by 2 to widen the image in the terminal
-    return "".join([CHARSET[pixel // 25] * 2 for pixel in pixels])
+    if RANDOM_CHARSET_PER_FRAME:
+        return "".join([choice(ASCII_CHARSETS)[pixel // 25] * 2 for pixel in pixels])
+    else:
+        return "".join([CHARSET[pixel // 25] * 2 for pixel in pixels])
 
 
 def play_music_file(mp3_file):
@@ -138,6 +150,8 @@ def play_music_file(mp3_file):
 
 
 # https://vocaloidlyrics.fandom.com/wiki/Bad_Apple!!
+# synced ONLY for this video: https://youtu.be/watch?v=FtutLA63Cp8
+# used this for syncing: https://lrcgenerator.com
 # yes, i'm aware that this is from another bad apple cover, just happened to also cover the shadow art version shit as well
 bad_apple_lyrics = {
     ("00:01.00", "00:29.07"): "",
@@ -198,26 +212,26 @@ timestamp_list = [key for key in bad_apple_lyrics]
 
 
 # https://stackoverflow.com/questions/45265044/how-to-check-a-time-is-between-two-times-in-python
-def is_between_time(time, time_range):
+def is_between_time(time, time_range: tuple):
     if time_range[1] < time_range[0]:
         return time >= time_range[0] or time <= time_range[1]
     return time_range[0] <= time <= time_range[1]
 
 
-global counter_lyrics
-counter_lyrics = 0
+global lrc_count
+lrc_count = 0
 
 
 def render_lyrics(timestamp):
-    global counter_lyrics
-    if counter_lyrics == len(timestamp_list):
-        counter_lyrics = len(timestamp_list) - 1
+    global lrc_count
+    if lrc_count == len(timestamp_list):
+        lrc_count = len(timestamp_list) - 1
 
-    if is_between_time(timestamp, timestamp_list[counter_lyrics]):
-        print(f"\n{bcolors.FAIL}{bcolors.BOLD}{bad_apple_lyrics[timestamp_list[counter_lyrics - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
-        counter_lyrics = counter_lyrics + 1
+    if is_between_time(timestamp, timestamp_list[lrc_count]):
+        print(f"\n{bcolors.FAIL}{bcolors.BOLD}{bad_apple_lyrics[timestamp_list[lrc_count - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
+        lrc_count = lrc_count + 1
     else:
-        print(f"\n{bcolors.BOLD}{bcolors.FAIL}{bad_apple_lyrics[timestamp_list[counter_lyrics - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
+        print(f"\n{bcolors.BOLD}{bcolors.FAIL}{bad_apple_lyrics[timestamp_list[lrc_count - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
 
 
 colors = [
@@ -226,7 +240,9 @@ colors = [
     bcolors.OKCYAN,
     bcolors.OKGREEN,
     bcolors.WARNING,
-    bcolors.FAIL
+    bcolors.FAIL,
+    bcolors.BOLD,
+    bcolors.ENDC
 ]
 
 
@@ -271,25 +287,26 @@ def render_frames(new_width):
     hwnd = user32.GetForegroundWindow()
     user32.ShowWindow(hwnd, SW_MAXIMISE)
 
-    print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nComposed by ZUN\nCover by Alstroemeria Records feat. nomico\n")
+    """ print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nComposed by ZUN\nCover by Alstroemeria Records feat. nomico\n")
     sleep(2)
     print(f"Programmed by {bcolors.WARNING}横浜{bcolors.ENDC}\n")
     sleep(2)
     print(f"{bcolors.WARNING}Seizure warning: flashing lights!{bcolors.ENDC}\nYou may want to close other programs to reduce lag.\n\n")
     sleep(2)
     print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}")
-    sleep(3)
+    sleep(3) """
 
     play_music_file("cache/audio/track.mp3")
 
     start = datetime.now()
     
     for frame in FRAMES_FOLDER:
+        # start_render_frame = time()
+
         try:
             image = open(f"cache/frames/{frame}")
         except:
             print("invalid file")
-        
         
         new_image_data = pixels_to_ascii(grayscale(resize_image(image)))
         
@@ -298,14 +315,26 @@ def render_frames(new_width):
 
         # print(chr(27) + "[2J")
         os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
-        print(ascii_image)
-        # print(f"{choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
+        if FLASH_COLORS:
+            print(f"{choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
+        else:
+            print(ascii_image)
+
+        # end_render_frame = time()
+        # render_frame_delay = end_render_frame - start_render_frame
 
         lyrics_time = datetime.now()
         lyrics_time_str = str(lyrics_time - start)[2:10]
         render_lyrics(lyrics_time_str)
         print(lyrics_time_str)
         
+        # time.sleep(1/fps-run_time if 1/fps-run_time>0 else 0)
+        """ if (1 / RATE_CONST) < render_frame_delay:
+            FPS = 1 / RATE_CONST
+            sleep(FPS)
+        else:
+            FPS = (1 / RATE_CONST) - render_frame_delay
+            sleep(FPS) """
         sleep(FPS) # comment out this line for debugging
 
     end = datetime.now()
@@ -314,7 +343,7 @@ def render_frames(new_width):
     os.system("cls" if os.name == "nt" else "clear")
     sleep(3)
     print("\n" * 25 + f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}" + "\n" * 10 + "終")
-    print(f"time taken to render frames: {duration}") # should be close to 3:44
+    print(f"Time taken to render frames: {duration}") # should be close to 3:44
 
 
 videos = "cache/videos"
