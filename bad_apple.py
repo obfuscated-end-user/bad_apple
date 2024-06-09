@@ -7,7 +7,7 @@ from pygame import mixer
 from random import choice
 from subprocess import run, CalledProcessError
 from shutil import rmtree
-from time import sleep #, time
+from time import sleep
 from yt_dlp import YoutubeDL
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +34,8 @@ ASCII_CHARSETS = [
 ]
 
 SCALE_SIZE = 83
-RATE_CONST = 38.4 # adjust this if it syncs like ass, 38.50000001
+# 38.4 original
+RATE_CONST = 38.3 # adjust this if it syncs like ass, 38.50000001
 FPS = 1 / RATE_CONST
 
 # EXPERIMENTAL
@@ -287,54 +288,47 @@ def render_frames(new_width):
     hwnd = user32.GetForegroundWindow()
     user32.ShowWindow(hwnd, SW_MAXIMISE)
 
-    """ print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nComposed by ZUN\nCover by Alstroemeria Records feat. nomico\n")
+    print(f"\n\n\n\n\n{bcolors.FAIL}Bad Apple!!{bcolors.ENDC}\nComposed by ZUN\nCover by Alstroemeria Records feat. nomico\n")
     sleep(2)
     print(f"Programmed by {bcolors.WARNING}横浜{bcolors.ENDC}\n")
     sleep(2)
     print(f"{bcolors.WARNING}Seizure warning: flashing lights!{bcolors.ENDC}\nYou may want to close other programs to reduce lag.\n\n")
     sleep(2)
-    print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}")
-    sleep(3) """
-
-    play_music_file("cache/audio/track.mp3")
-
-    start = datetime.now()
+    print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}\n\n")
+    sleep(3)
     
-    for frame in FRAMES_FOLDER:
-        # start_render_frame = time()
+    frames_list = []
 
+    for frame_image in FRAMES_FOLDER:
+        # start_render_frame_images = time()
         try:
-            image = open(f"cache/frames/{frame}")
+            image = open(f"cache/frames/{frame_image}")
         except:
             print("invalid file")
         
         new_image_data = pixels_to_ascii(grayscale(resize_image(image)))
-        
         pixel_count = len(new_image_data)  
         ascii_image = "\n".join([new_image_data[index:(index + new_width)] for index in range(0, pixel_count, new_width)])
 
-        # print(chr(27) + "[2J")
-        os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
         if FLASH_COLORS:
-            print(f"{choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
+            frames_list.append(f"{choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
         else:
-            print(ascii_image)
+            frames_list.append(ascii_image)
+        print(f"\033[1A\033[KConverting images to text... ({FRAMES_FOLDER.index(frame_image)}/{len(FRAMES_FOLDER)})")
 
         # end_render_frame = time()
         # render_frame_delay = end_render_frame - start_render_frame
+    play_music_file("cache/audio/track.mp3")
 
-        lyrics_time = datetime.now()
-        lyrics_time_str = str(lyrics_time - start)[2:10]
+    start = datetime.now()
+
+    for frame in frames_list:
+        # print(chr(27) + "[2J")
+        os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
+        print(frame)
+        lyrics_time_str = str(datetime.now() - start)[2:10]
         render_lyrics(lyrics_time_str)
         print(lyrics_time_str)
-        
-        # time.sleep(1/fps-run_time if 1/fps-run_time>0 else 0)
-        """ if (1 / RATE_CONST) < render_frame_delay:
-            FPS = 1 / RATE_CONST
-            sleep(FPS)
-        else:
-            FPS = (1 / RATE_CONST) - render_frame_delay
-            sleep(FPS) """
         sleep(FPS) # comment out this line for debugging
 
     end = datetime.now()

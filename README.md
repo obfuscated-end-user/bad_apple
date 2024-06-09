@@ -16,6 +16,15 @@ I listened to the song for [God knows](https://youtu.be/watch?v=WWB01IuMvzA) how
 7. Press `CTRL + C` to stop the program from running.
 8. If something goes wrong, you can delete the `cache` folder, and it will start downloading the assets again.
 
+# Preview
+[Sample run (flashing lights warning)](https://youtu.be/yGg9V651lwg)
+
+![霧雨魔理沙](images/1.png "霧雨魔理沙")
+![パチュリー・ノーレッジ](images/2.png "パチュリー・ノーレッジ")
+![フランドール・スカーレット](images/5.png "フランドール・スカーレット")
+![上白沢慧音](images/4.png "上白沢慧音")
+![霧雨魔理沙と博麗霊夢](images/7.png "霧雨魔理沙と博麗霊夢")
+
 # Extra links
 * [Wikipedia article on Touhou Project (the series where this is derived from)](https://en.wikipedia.org/wiki/Touhou_Project)
 * [Wikipedia article on Bad Apple!!](https://en.wikipedia.org/wiki/Bad_Apple!!)
