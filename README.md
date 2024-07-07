@@ -1,6 +1,6 @@
 # Bad Apple!!
-[Bad Apple!!](https://youtu.be/watch?v=FtutLA63Cp8) rendered on the terminal using Python, with synced lyrics.  
-Yes, [two exclamation marks](https://www.reddit.com/r/japan/comments/6u5evk/how_come_double_exclamation_marks_are_so_common). Runs on Python 3.11.5, 64-bit.  
+[Bad Apple!!](https://youtu.be/watch?v=FtutLA63Cp8) rendered on the terminal using Python, with synced lyrics. Runs on Python 3.11.5, 64-bit.  
+Yes, [two exclamation marks](https://www.reddit.com/r/japan/comments/6u5evk/how_come_double_exclamation_marks_are_so_common).  
 You may have seen or heard about people rendering the video on esoteric medium choices. You can view some examples of it [here](https://www.youtube.com/playlist?list=PLrjpwekK1wIAhdAOTmRyAryvpm45MutRu).  
 Technically, this can render any YouTube video, just don't expect it to work without minor issues.  
 I listened to the song for [God knows](https://youtu.be/watch?v=WWB01IuMvzA) how many times while debugging this crap.
