@@ -33,9 +33,11 @@ ASCII_CHARSETS = [
     [*" ⠠⡐⠥⡕⡞⡟⡷⡾⡿⣿"],
 ]
 
-SCALE_SIZE = 83
+columns, _ = os.get_terminal_size()
+
+SCALE_SIZE = 80
 # 38.4 original
-RATE_CONST = 38.3 # adjust this if it syncs like ass, 38.50000001
+RATE_CONST = 36.7000001 # adjust this if it syncs like ass, 38.50000001
 FPS = 1 / RATE_CONST
 
 # EXPERIMENTAL
@@ -149,7 +151,6 @@ def play_music_file(mp3_file):
     mixer.music.play()
 
 
-
 # https://vocaloidlyrics.fandom.com/wiki/Bad_Apple!!
 # synced ONLY for this video: https://youtu.be/watch?v=FtutLA63Cp8
 # used this for syncing: https://lrcgenerator.com
@@ -229,10 +230,10 @@ def render_lyrics(timestamp):
         lrc_count = len(timestamp_list) - 1
 
     if is_between_time(timestamp, timestamp_list[lrc_count]):
-        print(f"\n{bcolors.FAIL}{bcolors.BOLD}{bad_apple_lyrics[timestamp_list[lrc_count - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
+        print(f"\n{bcolors.FAIL}{bcolors.BOLD}{bad_apple_lyrics[timestamp_list[lrc_count - 1]].center(columns - 7)}{bcolors.ENDC}")
         lrc_count = lrc_count + 1
     else:
-        print(f"\n{bcolors.BOLD}{bcolors.FAIL}{bad_apple_lyrics[timestamp_list[lrc_count - 1]].center(SCALE_SIZE * 2 - 10, ' ')}{bcolors.ENDC}\n")
+        print(f"\n{bcolors.BOLD}{bcolors.FAIL}{bad_apple_lyrics[timestamp_list[lrc_count - 1]].center(columns - 7)}{bcolors.ENDC}")
 
 
 colors = [
@@ -296,39 +297,38 @@ def render_frames(new_width):
     sleep(2)
     print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}\n\n")
     sleep(3)
+    print(f"{bcolors.FAIL}少女祈祷中{bcolors.ENDC}\n")
     
     frames_list = []
 
     for frame_image in FRAMES_FOLDER:
-        # start_render_frame_images = time()
         try:
             image = open(f"cache/frames/{frame_image}")
         except:
             print("invalid file")
         
         new_image_data = pixels_to_ascii(grayscale(resize_image(image)))
-        pixel_count = len(new_image_data)  
-        ascii_image = "\n".join([new_image_data[index:(index + new_width)] for index in range(0, pixel_count, new_width)])
+        pixel_count = len(new_image_data)
+        ascii_image = " \n".join([f"| {new_image_data[index:(index + new_width)]} |".center(columns - 1) for index in range(0, pixel_count, new_width)])
 
         if FLASH_COLORS:
             frames_list.append(f"{choice(colors)}{ascii_image}{bcolors.ENDC}") # random flashing colors
         else:
             frames_list.append(ascii_image)
-        print(f"\033[1A\033[KConverting images to text... ({FRAMES_FOLDER.index(frame_image)}/{len(FRAMES_FOLDER)})")
+        print(f"\033[1A\033[KConverting images into text... ({FRAMES_FOLDER.index(frame_image)}/{len(FRAMES_FOLDER)})")
 
-        # end_render_frame = time()
-        # render_frame_delay = end_render_frame - start_render_frame
     play_music_file("cache/audio/track.mp3")
 
     start = datetime.now()
 
     for frame in frames_list:
-        # print(chr(27) + "[2J")
         os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
+        print(f"X-{'-' * SCALE_SIZE * 2}-X".center(columns - 1))
         print(frame)
+        print(f"X-{'-' * SCALE_SIZE * 2}-X".center(columns - 1))
         lyrics_time_str = str(datetime.now() - start)[2:10]
         render_lyrics(lyrics_time_str)
-        print(lyrics_time_str)
+        print(lyrics_time_str.center(columns - 1))
         sleep(FPS) # comment out this line for debugging
 
     end = datetime.now()
