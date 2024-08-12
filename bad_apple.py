@@ -1,5 +1,7 @@
 import ctypes
+import gc
 import os
+# import sys
 
 from datetime import datetime
 from PIL.Image import open
@@ -9,6 +11,8 @@ from subprocess import run, CalledProcessError
 from shutil import rmtree
 from time import sleep
 from yt_dlp import YoutubeDL
+
+gc.collect()
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
@@ -293,12 +297,15 @@ def render_frames(new_width):
     sleep(2)
     print(f"Programmed by {bcolors.WARNING}横浜{bcolors.ENDC}\n")
     sleep(2)
-    print(f"{bcolors.WARNING}Seizure warning: flashing lights!{bcolors.ENDC}\nYou may want to close other programs to reduce lag.\n\n")
+    print(f"{bcolors.WARNING}Seizure warning: flashing lights!{bcolors.ENDC}\nMay not work properly if you have other terminal windows open.\nYou may want to close other programs to reduce lag.\n\n")
     sleep(2)
     print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}\n\n")
     sleep(3)
     print(f"{bcolors.FAIL}少女祈祷中{bcolors.ENDC}\n")
+
+    FRAMES_FOLDER_LENGTH = len(os.listdir(f"{THIS_FOLDER}/cache/frames"))
     
+    frames_list = [None] * FRAMES_FOLDER_LENGTH
     frames_list = []
 
     for frame_image in FRAMES_FOLDER:
@@ -324,6 +331,7 @@ def render_frames(new_width):
     for frame in frames_list:
         os.system("cls" if os.name == "nt" else "clear") # removes jittering up and down
         print(f"X-{'-' * SCALE_SIZE * 2}-X".center(columns - 1))
+        # print(sys.getsizeof(frame), FRAMES_FOLDER_LENGTH) # 9287 5258
         print(frame)
         print(f"X-{'-' * SCALE_SIZE * 2}-X".center(columns - 1))
         lyrics_time_str = str(datetime.now() - start)[2:10]
