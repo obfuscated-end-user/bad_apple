@@ -257,7 +257,7 @@ def render_frames(new_width):
     os.system("cls" if os.name == "nt" else "clear")
     
     # https://emojicombos.com/touhou-text-art
-    cirno_doll = (
+    cirno_fumo = (
     "⠀⢀⣒⠒⠆⠤⣀⡀\n"
     "⢠⡛⠛⠻⣷⣶⣦⣬⣕⡒⠤⢀⣀\n"
     "⡿⢿⣿⣿⣿⣿⣿⡿⠿⠿⣿⣳⠖⢋⣩⣭⣿⣶⡤⠶⠶⢶⣒⣲⢶⣉⣐⣒⣒⣒⢤⡀\n"
@@ -299,7 +299,7 @@ def render_frames(new_width):
     sleep(2)
     print(f"{bcolors.WARNING}Seizure warning: flashing lights!{bcolors.ENDC}\nMay not work properly if you have other terminal windows open.\nYou may want to close other programs to reduce lag.\n\n")
     sleep(2)
-    print(f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}\n\n")
+    print(f"{bcolors.OKCYAN}{cirno_fumo}{bcolors.ENDC}\n\n")
     sleep(3)
     print(f"{bcolors.FAIL}少女祈祷中{bcolors.ENDC}\n")
 
@@ -344,7 +344,7 @@ def render_frames(new_width):
     
     os.system("cls" if os.name == "nt" else "clear")
     sleep(3)
-    print("\n" * 25 + f"{bcolors.OKCYAN}{cirno_doll}{bcolors.ENDC}" + "\n" * 10 + "終")
+    print("\n" * 25 + f"{bcolors.OKCYAN}{cirno_fumo}{bcolors.ENDC}" + "\n" * 10 + "終")
     print(f"Time taken to render frames: {duration}") # should be close to 3:44
 
 
